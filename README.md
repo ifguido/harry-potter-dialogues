@@ -1,7 +1,3 @@
-Perfecto. Acá tenés un **README sólido, claro y honesto**, a nivel proyecto personal serio.
-Está pensado para alguien técnico que entra al repo y **entiende exactamente qué es, cómo funciona y cómo probarlo**.
-
----
 
 # Harry Potter Dialogues
 
@@ -289,10 +285,69 @@ Personal project.
 The code is provided for educational purposes.
 Movie files are **not included** and must be legally obtained by the user.
 
+## DigitalOcean – Server management
+
+The production server runs on a DigitalOcean droplet using **systemd** for the backend and **nginx** as the web server.
+
+### Restart backend (Node / SRT search)
+
+```bash
+sudo systemctl restart harry-potter-dialogues-backend
+```
+
+Check status and logs:
+
+```bash
+sudo systemctl status harry-potter-dialogues-backend --no-pager
+journalctl -u harry-potter-dialogues-backend -f
+```
+
 ---
 
-Si querés, próximo paso puedo:
+### Reload / restart nginx
 
-* hacer un **README corto para el frontend**
-* agregar un **diagrama ASCII** del flujo
-* o preparar una **sección “How the search algorithm works”** más técnica.
+After changing frontend files or nginx config:
+
+```bash
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+Full restart (only if needed):
+
+```bash
+sudo systemctl restart nginx
+```
+
+Check status:
+
+```bash
+sudo systemctl status nginx --no-pager
+```
+
+---
+
+### Restart everything (quick recovery)
+
+```bash
+sudo systemctl restart harry-potter-dialogues-backend
+sudo systemctl restart nginx
+```
+
+---
+
+### Useful diagnostics
+
+Check which ports are in use:
+
+```bash
+sudo ss -ltnp
+```
+
+Check recent nginx errors:
+
+```bash
+sudo tail -n 200 /var/log/nginx/error.log
+```
+
+---
