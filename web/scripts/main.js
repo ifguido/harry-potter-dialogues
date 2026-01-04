@@ -1,4 +1,10 @@
-import { initPlayer, lockDownVideoUI, forceSubtitlesOn, unlockAutoplay, setStopAt } from "./player.js";
+import {
+    initPlayer,
+    lockDownVideoUI,
+    forceSubtitlesOn,
+    unlockAutoplay,
+    setStopAt
+} from "./player.js";
 import { searchNext } from "./api.js";
 
 function mustGet(id) {
@@ -12,21 +18,20 @@ const form = /** @type {HTMLFormElement} */ (mustGet("form"));
 const input = /** @type {HTMLInputElement} */ (mustGet("query"));
 const status = mustGet("status");
 
-let lastQuery;
-let lastEndMs;
-
-
-const CONFIG = {
-    HLS_URL: "/public/hls/index.m3u8",
-    API_BASE: "/api/search"
-};
-
+// 🔥 Single source of truth
 const state = {
     lastQuery: "",
     lastEndMs: 0,
     busy: false,
     audioUnlocked: false
 };
+
+const CONFIG = {
+    HLS_URL: "/public/hls/index.m3u8",
+    API_BASE: "/api/search"
+};
+
+/* ================= STATUS ================= */
 
 function setStatus(text) {
     status.textContent = text || "";
@@ -41,9 +46,13 @@ function normalizeTerm(s) {
     return (s || "").trim();
 }
 
+/* ================= VIDEO ================= */
+
 async function ensureMetadata() {
     if (video.readyState >= 1) return;
-    await new Promise((resolve) => video.addEventListener("loadedmetadata", resolve, { once: true }));
+    await new Promise((resolve) =>
+        video.addEventListener("loadedmetadata", resolve, { once: true })
+    );
 }
 
 async function playSpan(startMs, endMs) {
@@ -53,6 +62,8 @@ async function playSpan(startMs, endMs) {
     await video.play().catch(() => { });
     forceSubtitlesOn(video);
 }
+
+/* ================= SEARCH ================= */
 
 async function doSearch(term, isNext) {
     term = normalizeTerm(term);
@@ -68,7 +79,11 @@ async function doSearch(term, isNext) {
 
     try {
         const afterMs = state.lastEndMs + 1;
-        const { start_ms, end_ms } = await searchNext(CONFIG.API_BASE, term, afterMs);
+        const { start_ms, end_ms } = await searchNext(
+            CONFIG.API_BASE,
+            term,
+            afterMs
+        );
 
         state.lastEndMs = end_ms;
 
@@ -81,6 +96,8 @@ async function doSearch(term, isNext) {
     }
 }
 
+/* ================= AUTOPLAY ================= */
+
 function bindAutoplayUnlock() {
     const unlock = async () => {
         if (state.audioUnlocked) return;
@@ -90,57 +107,60 @@ function bindAutoplayUnlock() {
     };
 
     document.addEventListener("pointerdown", unlock, { once: true });
-    document.addEventListener("touchstart", unlock, { once: true, passive: true });
+    document.addEventListener("touchstart", unlock, {
+        once: true,
+        passive: true
+    });
 }
+
+/* ================= FORM ================= */
 
 function bindSearch() {
     form.addEventListener("submit", async (e) => {
         e.preventDefault();
         e.stopPropagation();
 
-        const term = input.value.trim();
-        if (!term) return;
+        if (state.busy) return;
 
-        // 🔑 solo resetear si cambió la query
-        if (term !== lastQuery) {
-            lastQuery = term;
-            lastEndMs = 0;
-        }
-
-        try {
-            const res = await fetch(
-                `/api/search?q=${encodeURIComponent(term)}&after_ms=${lastEndMs + 1}`
-            );
-
-            if (!res.ok) throw new Error("not found");
-
-            const { start_ms, end_ms } = await res.json();
-
-            lastEndMs = end_ms;
-
-            video.currentTime = start_ms / 1000;
-            clipEndSec = end_ms / 1000;
-            await video.play().catch(() => { });
-        } catch {
-            showToast("No encontrado");
-        }
-
+        input.blur();
+        await doSearch(input.value, true);
         return false;
     });
+}
 
+/* ================= DISCLAIMER ================= */
 
-    input.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") {
-            // form submit handles it
+function bindLegalDisclaimer() {
+    const openBtn = document.getElementById("open-legal");
+    const closeBtn = document.getElementById("close-legal");
+    const modal = document.getElementById("legal-modal");
+
+    if (!openBtn || !closeBtn || !modal) return;
+
+    openBtn.addEventListener("click", () => {
+        modal.classList.add("open");
+    });
+
+    closeBtn.addEventListener("click", () => {
+        modal.classList.remove("open");
+    });
+
+    modal.addEventListener("click", (e) => {
+        if (e.target === modal) {
+            modal.classList.remove("open");
         }
     });
 }
 
+/* ================= BOOT ================= */
+
 function bootstrap() {
     initPlayer(video, CONFIG.HLS_URL);
     lockDownVideoUI(video);
+
     bindAutoplayUnlock();
     bindSearch();
+    bindLegalDisclaimer();
 
     video.addEventListener("loadedmetadata", () => {
         forceSubtitlesOn(video);

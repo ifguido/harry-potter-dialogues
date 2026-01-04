@@ -96,3 +96,61 @@ video {
     border-radius: 12px;
   }
 }
+
+.legal {
+  position: fixed;
+  bottom: 12px;
+  right: 12px;
+  z-index: 20;
+}
+
+.legal button {
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.legal-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 30;
+}
+
+.legal-modal.open {
+  display: flex;
+}
+
+.legal-content {
+  max-width: 520px;
+  max-height: 80vh;
+  overflow-y: auto;
+  background: #111;
+  color: #fff;
+  padding: 20px;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.legal-content h2 {
+  margin-top: 0;
+}
+
+.legal-content .close {
+  position: absolute;
+  top: 16px;
+  right: 18px;
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 24px;
+  cursor: pointer;
+}
