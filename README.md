@@ -1,5 +1,9 @@
-
 # Harry Potter Dialogues
+
+[![Harry Potter Dialogues demo](./assets/hp.gif)](https://harrypotterdialogues.com)
+
+Search any line and instantly jump to the exact scene where it appears.
+
 
 🔮 **Harry Potter Dialogues** is a web application that lets you search for any word or phrase and instantly jump to the exact moment in the movie where that dialogue is spoken.
 
