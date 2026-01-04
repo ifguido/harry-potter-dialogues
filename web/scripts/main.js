@@ -350,17 +350,19 @@ function autoTypeAndSearchDefault() {
 
     let cancelled = false;
     let timer = null;
+    let submitTimer = null;
     let i = 0;
 
     const cancel = () => {
         cancelled = true;
-        cleanup();
+        if (timer) clearTimeout(timer);
+        if (submitTimer) clearTimeout(submitTimer);
+        cleanupListeners();
         // If the user interrupted before typing finished, avoid leaving partial text.
         if (input.value !== text) input.value = "";
     };
 
-    const cleanup = () => {
-        if (timer) clearTimeout(timer);
+    const cleanupListeners = () => {
         window.removeEventListener("keydown", cancel, true);
         window.removeEventListener("pointerdown", cancel, true);
         input.removeEventListener("input", cancel, true);
@@ -380,11 +382,11 @@ function autoTypeAndSearchDefault() {
             return;
         }
 
-        timer = setTimeout(() => {
+        submitTimer = setTimeout(() => {
             if (cancelled) return;
             requestSearchSubmit();
         }, afterDelayMs);
-        cleanup();
+        cleanupListeners();
     };
 
     tick();
