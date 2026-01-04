@@ -5,6 +5,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
     getAnalytics,
+    logEvent,
     isSupported
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js";
 
@@ -18,17 +19,46 @@ const firebaseConfig = {
     measurementId: "G-L4D4Z91QF2"
 };
 
-(async () => {
+let analytics = null;
+let initPromise = null;
+
+async function initAnalytics() {
+    if (analytics) return analytics;
+    if (initPromise) return initPromise;
+
+    initPromise = (async () => {
+        try {
+            // Respect Do Not Track when enabled.
+            if (navigator.doNotTrack === "1") return null;
+
+            const supported = await isSupported();
+            if (!supported) return null;
+
+            const app = initializeApp(firebaseConfig);
+            analytics = getAnalytics(app);
+            return analytics;
+        } catch {
+            // Analytics must never break playback/search UI.
+            return null;
+        }
+    })();
+
+    return initPromise;
+}
+
+/**
+ * Logs a GA4 event via Firebase Analytics.
+ * Safe to call anytime: if analytics isn't available, it's a no-op.
+ */
+export async function track(eventName, params) {
     try {
-        // Respect Do Not Track when enabled.
-        if (navigator.doNotTrack === "1") return;
-
-        const supported = await isSupported();
-        if (!supported) return;
-
-        const app = initializeApp(firebaseConfig);
-        getAnalytics(app);
+        const a = await initAnalytics();
+        if (!a) return;
+        logEvent(a, String(eventName), params || {});
     } catch {
-        // Analytics must never break playback/search UI.
+        // no-op
     }
-})();
+}
+
+// Kick off initialization early.
+initAnalytics();

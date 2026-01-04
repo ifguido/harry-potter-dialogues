@@ -7,6 +7,7 @@ import {
 } from "./player.js";
 import { searchNext } from "./api.js";
 import { applyI18n, getLanguage, setLanguage, t } from "./i18n.js";
+import { track } from "./analytics.js";
 
 function mustGet(id) {
     const el = document.getElementById(id);
@@ -242,8 +243,28 @@ async function doSearch(term, isNext) {
 
         await playSpan(start_ms, end_ms);
         setStatus("");
+
+        // Analytics: track successful searches.
+        // Note: search always targets English dialogues; this tracks what the user typed.
+        track("search", {
+            ui_lang: getLanguage(),
+            query: term.slice(0, 80),
+            query_len: term.length,
+            is_next: Boolean(isNext),
+            after_ms: afterMs,
+            start_ms,
+            end_ms
+        });
     } catch {
         setStatus(t("status.notFound"));
+
+        // Analytics: track failed searches.
+        track("search_not_found", {
+            ui_lang: getLanguage(),
+            query: term.slice(0, 80),
+            query_len: term.length,
+            is_next: Boolean(isNext)
+        });
     } finally {
         setBusy(false);
     }
