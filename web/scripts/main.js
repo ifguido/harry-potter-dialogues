@@ -1,69 +1,124 @@
-import "./styles.css";
-import { initPlayer, setStopAt, forceSubsOn, unlockAutoplay } from "./player.js";
+import { initPlayer, lockDownVideoUI, forceSubtitlesOn, unlockAutoplay, setStopAt } from "./player.js";
 import { searchNext } from "./api.js";
 import { showToast } from "./ui.js";
 
-const video = document.getElementById("video");
-const form = document.getElementById("form");
-const input = document.getElementById("query");
-const offsetInput = document.getElementById("offset");
+/**
+ * Returns a DOM element by id and throws if it doesn't exist.
+ * This avoids silent null errors later.
+ */
+function mustGet(id) {
+    const el = document.getElementById(id);
+    if (!el) throw new Error(`Missing element #${id}`);
+    return el;
+}
 
-// Rutas relativas (mismo origin). En dev, Vite proxy manda /api al server.
-const HLS_URL = "/hls/index.m3u8";
-const API_BASE = "/api/search";
+const video = /** @type {HTMLVideoElement} */ (mustGet("video"));
+const form = /** @type {HTMLFormElement} */ (mustGet("form"));
+const input = /** @type {HTMLInputElement} */ (mustGet("query"));
+const offsetInput = /** @type {HTMLInputElement} */ (mustGet("offset"));
 
-// init playback
-initPlayer(video, HLS_URL);
+/**
+ * App configuration.
+ * - HLS_URL is the HLS manifest (m3u8).
+ * - API_BASE is your backend endpoint.
+ *
+ * Keep these as HTTP in local dev unless you fully run HTTPS everywhere.
+ */
+const CONFIG = {
+    HLS_URL: "http://localhost:5173/public/hls/index.m3u8",
+    API_BASE: "http://localhost:8787/api/search"
+};
 
-// lock down UI (sin controls)
-video.controls = false;
-video.disablePictureInPicture = true;
-video.setAttribute("controlsList", "nodownload noplaybackrate noremoteplayback");
-video.addEventListener("contextmenu", (e) => e.preventDefault());
+/**
+ * State for "repeat search => next match".
+ * If the same query is submitted again, we pass after_ms as the last end time.
+ */
+const state = {
+    lastQuery: "",
+    lastEndMs: 0
+};
 
-// autoplay policies: arrancamos muted y se “desbloquea” con interacción real
-document.addEventListener(
-    "pointerdown",
-    () => {
-        unlockAutoplay(video);
-        forceSubsOn(video);
-    },
-    { once: true }
-);
+/**
+ * Bootstraps video playback: HLS attachment and UI restrictions.
+ */
+function bootstrap() {
+    initPlayer(video, CONFIG.HLS_URL);
+    lockDownVideoUI(video);
+    bindAutoplayUnlock(video);
+    bindSearch(form);
+    bindSubtitlesSafety(video);
+}
 
-// “otra escena” en búsquedas repetidas
-let lastQuery = "";
-let lastEndMs = 0;
+bootstrap();
 
-form.addEventListener("submit", async (e) => {
-    e.preventDefault();
+/**
+ * Enables audio + playback on the first real user interaction to satisfy autoplay policies.
+ */
+function bindAutoplayUnlock(videoEl) {
+    document.addEventListener(
+        "pointerdown",
+        () => {
+            unlockAutoplay(videoEl);
+            forceSubtitlesOn(videoEl);
+        },
+        { once: true }
+    );
+}
 
-    const term = input.value.trim();
-    if (!term) return;
+/**
+ * Ensures subtitles are shown when metadata is loaded (some browsers ignore track default).
+ */
+function bindSubtitlesSafety(videoEl) {
+    videoEl.addEventListener("loadedmetadata", () => {
+        forceSubtitlesOn(videoEl);
+    });
+}
 
-    if (term !== lastQuery) {
-        lastQuery = term;
-        lastEndMs = 0;
+/**
+ * Binds the search form submission to:
+ * - fetch the next matching time span from the backend
+ * - seek the video and stop at the end time
+ */
+function bindSearch(formEl) {
+    formEl.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const term = input.value.trim();
+        if (!term) return;
+
+        try {
+            const { start_ms, end_ms } = await fetchNextSpan(term);
+
+            // Stop the playback at end_ms (in seconds)
+            setStopAt(video, end_ms / 1000);
+
+            // Seek to start_ms (in seconds) and play best-effort
+            video.currentTime = start_ms / 1000;
+            await video.play().catch(() => { });
+            forceSubtitlesOn(video);
+        } catch {
+            showToast("No encontrado");
+        }
+    });
+}
+
+/**
+ * Requests the next matching span for a term, handling:
+ * - query changes (reset after_ms)
+ * - repeated queries (advance after_ms)
+ * - runtime offset adjustment (offset_ms)
+ */
+async function fetchNextSpan(term) {
+    if (term !== state.lastQuery) {
+        state.lastQuery = term;
+        state.lastEndMs = 0;
     }
 
     const offsetMs = Number(offsetInput.value || 0);
+    const afterMs = state.lastEndMs + 1;
 
-    try {
-        const { start_ms, end_ms } = await searchNext(API_BASE, term, lastEndMs + 1, offsetMs);
-        lastEndMs = end_ms;
+    const result = await searchNext(CONFIG.API_BASE, term, afterMs, offsetMs);
+    state.lastEndMs = result.end_ms;
 
-        // stop-at + seek
-        setStopAt(video, end_ms / 1000);
-        await video.play().catch(() => { });
-        video.currentTime = start_ms / 1000;
-
-        // best-effort play + subs
-        await video.play().catch(() => { });
-        forceSubsOn(video);
-    } catch {
-        showToast("No encontrado");
-    }
-});
-
-// por si el track carga tarde
-video.addEventListener("loadedmetadata", () => forceSubsOn(video));
+    return result;
+}

@@ -9,17 +9,15 @@ body {
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
 }
 
-/* Video ocupa todo el viewport */
 video {
   position: fixed;
   inset: 0;
   width: 100vw;
   height: 100vh;
-  object-fit: cover; /* cambiá a contain si no querés crop */
+  object-fit: cover;
   background: black;
 }
 
-/* Buscador flotante */
 .search {
   position: fixed;
   top: 16px;

@@ -7,14 +7,16 @@
       content="width=device-width,initial-scale=1,viewport-fit=cover"
     />
     <title>Harry Potter Dialogues</title>
+    <link rel="stylesheet" href="./styles/styles.css" />
   </head>
+
   <body>
     <video id="video" autoplay muted playsinline>
       <track
         label="Subtitles"
         kind="subtitles"
         srclang="en"
-        src="/movie.vtt"
+        src="./public/movie.vtt"
         default
       />
     </video>
@@ -31,9 +33,10 @@
       <button type="submit">Buscar</button>
     </form>
 
-    <!-- HLS.js solo como fallback (Safari usa nativo) -->
+    <!-- HLS.js fallback for browsers without native HLS support (Safari uses native HLS) -->
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
-    <script type="module" src="/src/main.js"></script>
+    <!-- App entry -->
+    <script type="module" src="./scripts/main.js"></script>
   </body>
 </html>
