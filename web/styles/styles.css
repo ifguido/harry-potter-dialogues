@@ -37,6 +37,32 @@ video {
   overflow: hidden;
 }
 
+.subs {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: max(40px, env(safe-area-inset-bottom));
+  width: min(980px, calc(100vw - 24px));
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.35);
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 18px;
+  line-height: 1.35;
+  text-align: center;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.subs:empty {
+  display: none;
+}
+
+.subs .hl {
+  font-weight: 800;
+  text-decoration: underline;
+}
+
 /* Simple floating search bar */
 .search {
   position: fixed;

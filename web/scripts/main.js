@@ -17,6 +17,7 @@ const video = /** @type {HTMLVideoElement} */ (mustGet("video"));
 const form = /** @type {HTMLFormElement} */ (mustGet("form"));
 const input = /** @type {HTMLInputElement} */ (mustGet("query"));
 const status = mustGet("status");
+const subs = document.getElementById("subs");
 
 const clipOverlay = document.getElementById("clip-overlay");
 const clipOverlayBtn = document.getElementById("clip-overlay-btn");
@@ -60,6 +61,85 @@ function setBusy(b) {
 
 function normalizeTerm(s) {
     return (s || "").trim();
+}
+
+/* ================= SUBTITLES (CUSTOM OVERLAY) ================= */
+
+function escapeHtml(s) {
+    return String(s)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+}
+
+function escapeRegExp(s) {
+    return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function highlightText(rawText, query) {
+    const text = String(rawText || "");
+    const term = normalizeTerm(query);
+    if (!term) return escapeHtml(text);
+
+    // Prefer highlighting the full query (phrase). If it doesn't appear, fall back to tokens.
+    const full = new RegExp(escapeRegExp(term), "gi");
+    if (full.test(text)) {
+        return escapeHtml(text).replace(full, (m) => `<span class="hl">${escapeHtml(m)}</span>`);
+    }
+
+    const tokens = term
+        .split(/\s+/)
+        .map((t) => t.trim())
+        .filter((t) => t.length >= 2);
+
+    if (!tokens.length) return escapeHtml(text);
+
+    // Highlight longer tokens first to avoid partial overlaps.
+    tokens.sort((a, b) => b.length - a.length);
+    const tokenRe = new RegExp(tokens.map(escapeRegExp).join("|"), "gi");
+
+    return escapeHtml(text).replace(tokenRe, (m) => `<span class="hl">${escapeHtml(m)}</span>`);
+}
+
+function pickSubtitleTrack() {
+    const tracks = Array.from(video.textTracks || []);
+    return (
+        tracks.find((t) => t.kind === "subtitles" || t.kind === "captions") ||
+        tracks[0] ||
+        null
+    );
+}
+
+function initSubtitleOverlay() {
+    if (!subs) return;
+
+    const track = pickSubtitleTrack();
+    if (!track) return;
+
+    // Hide native subtitle rendering and drive our own overlay.
+    // This makes highlighting consistent across browsers.
+    track.mode = "hidden";
+
+    const render = () => {
+        const cues = track.activeCues;
+        if (!cues || cues.length === 0) {
+            subs.textContent = "";
+            return;
+        }
+
+        // Join active cues (some subtitle formats can overlap).
+        const joined = Array.from(cues)
+            .map((c) => ("text" in c ? c.text : ""))
+            .filter(Boolean)
+            .join("\n");
+
+        subs.innerHTML = highlightText(joined, state.lastQuery);
+    };
+
+    track.addEventListener("cuechange", render);
+    render();
 }
 
 /* ================= VIDEO ================= */
@@ -129,7 +209,7 @@ async function playSpan(startMs, endMs) {
         return;
     }
 
-    forceSubtitlesOn(video);
+    // Native subtitles are kept hidden; we render subtitles via the overlay.
 }
 
 /* ================= SEARCH ================= */
@@ -172,7 +252,7 @@ function bindAutoplayUnlock() {
         if (state.audioUnlocked) return;
         state.audioUnlocked = true;
         unlockAutoplay(video);
-        forceSubtitlesOn(video);
+        // Subtitles overlay is independent from autoplay unlock.
     };
 
     document.addEventListener("pointerdown", unlock, { once: true });
@@ -233,7 +313,7 @@ function bootstrap() {
     bindLegalDisclaimer();
 
     video.addEventListener("loadedmetadata", () => {
-        forceSubtitlesOn(video);
+        initSubtitleOverlay();
     });
     video.addEventListener("clipend", () => {
         // Non-blocking overlay: we show a small card on top of the video
