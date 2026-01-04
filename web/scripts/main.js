@@ -10,9 +10,7 @@ function mustGet(id) {
 const video = /** @type {HTMLVideoElement} */ (mustGet("video"));
 const form = /** @type {HTMLFormElement} */ (mustGet("form"));
 const input = /** @type {HTMLInputElement} */ (mustGet("query"));
-const btnNext = /** @type {HTMLButtonElement} */ (mustGet("btnNext"));
 const status = mustGet("status");
-const hint = mustGet("hint");
 
 const CONFIG = {
     HLS_URL: "/public/hls/index.m3u8",
@@ -83,7 +81,6 @@ function bindAutoplayUnlock() {
     const unlock = async () => {
         if (state.audioUnlocked) return;
         state.audioUnlocked = true;
-        hint.textContent = "";
         unlockAutoplay(video);
         forceSubtitlesOn(video);
     };
@@ -106,12 +103,6 @@ function bindSearch() {
         } catch {
             showToast("No encontrado");
         }
-    });
-
-    btnNext.addEventListener("click", async () => {
-        if (state.busy) return;
-        input.blur();
-        await doSearch(input.value, true);
     });
 
     input.addEventListener("keydown", (e) => {
