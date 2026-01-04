@@ -5,10 +5,10 @@
 export const CONFIG = {
     PORT: Number(process.env.PORT ?? 8787),
     SRT_PATH: process.env.SRT_PATH ?? "./movie.srt",
-    NEIGHBORS: Number(process.env.NEIGHBORS ?? 2),
+    NEIGHBORS: Number(process.env.NEIGHBORS ?? 1),
     GLOBAL_OFFSET_MS: Number(process.env.GLOBAL_OFFSET_MS ?? 0),
-    PAD_START_MS: Number(process.env.PAD_START_MS ?? 1200),
-    PAD_END_MS: Number(process.env.PAD_END_MS ?? 1800),
+    PAD_START_MS: Number(process.env.PAD_START_MS ?? 300),
+    PAD_END_MS: Number(process.env.PAD_END_MS ?? 600),
     CORS_ORIGIN: process.env.CORS_ORIGIN ?? "*",
 } as const;
 

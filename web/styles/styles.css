@@ -1,3 +1,8 @@
+:root {
+  --pad: 12px;
+  --radius: 18px;
+}
+
 html,
 body {
   margin: 0;
@@ -7,6 +12,12 @@ body {
   background: black;
   overflow: hidden;
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  overscroll-behavior: none;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
 }
 
 video {
@@ -18,65 +29,70 @@ video {
   background: black;
 }
 
+/* Simple floating search bar */
 .search {
   position: fixed;
-  top: 16px;
   left: 50%;
   transform: translateX(-50%);
-  width: min(900px, calc(100vw - 24px));
+  top: max(12px, env(safe-area-inset-top));
+  width: min(900px, calc(100vw - 16px));
   display: flex;
   gap: 10px;
-  padding: 12px;
-  border-radius: 18px;
+  padding: var(--pad);
+  border-radius: var(--radius);
   background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(10px);
 }
 
+/* Input: mobile-friendly sizes */
 .search input {
   flex: 1;
   border: none;
   outline: none;
   background: transparent;
   color: white;
-  font-size: 18px;
+  font-size: 16px; /* prevents iOS zoom */
+  line-height: 20px;
+  padding: 10px 10px;
+  min-width: 0;
 }
 
+/* Button: bigger tap target */
 .search button {
   border: none;
   padding: 10px 14px;
   border-radius: 14px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
+  min-height: 40px;
+  white-space: nowrap;
 }
 
+/* Toast: keep visible above home indicator */
 .toast {
   position: fixed;
-  bottom: 80px;
   left: 50%;
   transform: translateX(-50%);
+  bottom: max(80px, env(safe-area-inset-bottom));
   color: white;
   background: rgba(0, 0, 0, 0.55);
-  padding: 8px 14px;
+  padding: 10px 14px;
   border-radius: 14px;
   font-size: 14px;
   display: none;
 }
 
-.offset {
-  position: fixed;
-  right: 16px;
-  top: 16px;
-  color: white;
-  background: rgba(0, 0, 0, 0.45);
-  padding: 10px 12px;
-  border-radius: 14px;
-  font-size: 13px;
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  user-select: none;
-}
+/* Small screens: keep it clean */
+@media (max-width: 420px) {
+  .search {
+    width: calc(100vw - 16px);
+    gap: 8px;
+    padding: 10px;
+    border-radius: 16px;
+  }
 
-.offset input {
-  width: 100px;
+  .search button {
+    padding: 10px 12px;
+    border-radius: 12px;
+  }
 }

@@ -40,14 +40,6 @@ export function forceSubtitlesOn(video) {
     } catch { }
 }
 
-/**
- * Attempts to start playback with audio after a real user gesture.
- * This is required by autoplay policies in modern browsers.
- */
-export function unlockAutoplay(video) {
-    video.muted = false;
-    video.play().catch(() => { });
-}
 
 let clipEndSec = null;
 let boundVideo = null;
@@ -69,4 +61,14 @@ export function setStopAt(video, endSec) {
             video.pause();
         }
     });
+}
+
+/**
+ * Attempts to start playback with audio after a real user gesture.
+ * This is required by autoplay policies in modern browsers.
+ */
+export function unlockAutoplay(video) {
+    video.muted = false;
+    video.playsInline = true;
+    video.play().catch(() => { });
 }
