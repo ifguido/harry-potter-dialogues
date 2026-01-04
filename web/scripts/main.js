@@ -51,6 +51,8 @@ const CONFIG = {
     API_BASE: "/api/search"
 };
 
+const DEFAULT_QUERY = "harry potter";
+
 /* ================= STATUS ================= */
 
 function setStatus(text) {
@@ -327,6 +329,67 @@ function bindLegalDisclaimer() {
     });
 }
 
+/* ================= DEFAULT SEARCH (TYPEWRITER) ================= */
+
+function requestSearchSubmit() {
+    if (typeof form.requestSubmit === "function") {
+        form.requestSubmit();
+        return;
+    }
+    // Fallback for older browsers.
+    form.dispatchEvent(new Event("submit", { cancelable: true }));
+}
+
+function autoTypeAndSearchDefault() {
+    // Only run if the user hasn't started typing.
+    if (normalizeTerm(input.value)) return;
+
+    const text = DEFAULT_QUERY;
+    const keyDelayMs = 85;
+    const afterDelayMs = 150;
+
+    let cancelled = false;
+    let timer = null;
+    let i = 0;
+
+    const cancel = () => {
+        cancelled = true;
+        cleanup();
+        // If the user interrupted before typing finished, avoid leaving partial text.
+        if (input.value !== text) input.value = "";
+    };
+
+    const cleanup = () => {
+        if (timer) clearTimeout(timer);
+        window.removeEventListener("keydown", cancel, true);
+        window.removeEventListener("pointerdown", cancel, true);
+        input.removeEventListener("input", cancel, true);
+    };
+
+    window.addEventListener("keydown", cancel, { once: true, capture: true });
+    window.addEventListener("pointerdown", cancel, { once: true, capture: true });
+    input.addEventListener("input", cancel, { once: true, capture: true });
+
+    const tick = () => {
+        if (cancelled) return;
+        input.value = text.slice(0, i);
+        i += 1;
+
+        if (i <= text.length) {
+            timer = setTimeout(tick, keyDelayMs);
+            return;
+        }
+
+        timer = setTimeout(() => {
+            if (cancelled) return;
+            requestSearchSubmit();
+        }, afterDelayMs);
+        cleanup();
+    };
+
+    tick();
+}
+
 /* ================= BOOT ================= */
 
 function bootstrap() {
@@ -348,6 +411,9 @@ function bootstrap() {
     bindAutoplayUnlock();
     bindSearch();
     bindLegalDisclaimer();
+
+    // Start with a default search.
+    autoTypeAndSearchDefault();
 
     video.addEventListener("loadedmetadata", () => {
         initSubtitleOverlay();
