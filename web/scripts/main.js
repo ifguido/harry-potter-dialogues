@@ -69,15 +69,57 @@ async function ensureMetadata() {
     );
 }
 
+async function seekTo(sec) {
+    await ensureMetadata();
+    if (!Number.isFinite(sec)) return;
+
+    const target = Math.max(0, sec);
+    if (Math.abs(video.currentTime - target) < 0.05) return;
+
+    await new Promise((resolve) => {
+        let done = false;
+        const onSeeked = () => {
+            if (done) return;
+            done = true;
+            cleanup();
+            resolve();
+        };
+        const timer = setTimeout(() => {
+            if (done) return;
+            done = true;
+            cleanup();
+            resolve();
+        }, 2000);
+
+        const cleanup = () => {
+            clearTimeout(timer);
+            video.removeEventListener("seeked", onSeeked);
+        };
+
+        video.addEventListener("seeked", onSeeked, { once: true });
+        video.currentTime = target;
+    });
+}
+
 async function playSpan(startMs, endMs) {
     await ensureMetadata();
     hideClipOverlay();
     // Clear any previous stop before seeking (important when jumping backwards)
     setStopAt(video, null);
     video.pause();
-    video.currentTime = startMs / 1000;
+
+    await seekTo(startMs / 1000);
     setStopAt(video, endMs / 1000);
-    await video.play().catch(() => { });
+
+    const played = await video.play().then(
+        () => true,
+        () => false
+    );
+    if (!played) {
+        setStatus("Tap to enable playback");
+        return;
+    }
+
     forceSubtitlesOn(video);
 }
 
