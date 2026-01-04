@@ -1,35 +1,62 @@
 import { CONFIG } from "../core/config";
-import { Cue, Span, TokenIndex, SearchResponse } from "../core/types";
+import { Cue, TokenIndex, SearchResponse } from "../core/types";
 import { normalize } from "../core/utils";
 import { pickRarestToken } from "./index";
 
 /**
- * Computes the time span for a cue window around index i.
- */
-function windowSpan(cues: Cue[], i: number): Span {
-    const a = Math.max(0, i - CONFIG.NEIGHBORS);
-    const b = Math.min(cues.length - 1, i + CONFIG.NEIGHBORS);
-    return { start_ms: cues[a].start_ms, end_ms: cues[b].end_ms };
-}
-
-/**
- * Builds the normalized text for a cue window around index i.
- * This allows matching phrases that span multiple cues.
- */
-function windowText(cues: Cue[], i: number) {
-    const a = Math.max(0, i - CONFIG.NEIGHBORS);
-    const b = Math.min(cues.length - 1, i + CONFIG.NEIGHBORS);
-    return cues.slice(a, b + 1).map((c) => c.text_norm).join(" ");
-}
-
-/**
  * Adds padding before/after a span so playback starts earlier and ends later.
  */
-function withPadding(span: Span): SearchResponse {
+function withPadding(start_ms: number, end_ms: number): SearchResponse {
     return {
-        start_ms: Math.max(0, span.start_ms - CONFIG.PAD_START_MS),
-        end_ms: span.end_ms + CONFIG.PAD_END_MS,
+        start_ms: Math.max(0, start_ms - CONFIG.PAD_START_MS),
+        end_ms: end_ms + CONFIG.PAD_END_MS,
     };
+}
+
+/**
+ * Builds a normalized joined text for cues[a..b] and a mapping from character index to cue index.
+ * This lets us map a substring match back to the exact cue range involved.
+ */
+function buildJoinedTextWithMap(cues: Cue[], a: number, b: number) {
+    let text = "";
+    const map: { cueIndex: number; startChar: number; endChar: number }[] = [];
+
+    for (let i = a; i <= b; i++) {
+        const startChar = text.length;
+        if (text.length) text += " ";
+        text += cues[i].text_norm;
+        const endChar = text.length;
+
+        map.push({ cueIndex: i, startChar, endChar });
+    }
+
+    return { text, map };
+}
+
+/**
+ * Given a match [pos..pos+len) in joined text, returns the first and last cue indices that overlap it.
+ */
+function matchToCueRange(
+    map: { cueIndex: number; startChar: number; endChar: number }[],
+    pos: number,
+    len: number
+) {
+    const matchStart = pos;
+    const matchEnd = pos + len;
+
+    let first: number | null = null;
+    let last: number | null = null;
+
+    for (const seg of map) {
+        const overlaps =
+            seg.endChar > matchStart && seg.startChar < matchEnd;
+        if (!overlaps) continue;
+
+        if (first === null) first = seg.cueIndex;
+        last = seg.cueIndex;
+    }
+
+    return first === null || last === null ? null : { first, last };
 }
 
 /**
@@ -37,6 +64,8 @@ function withPadding(span: Span): SearchResponse {
  * - token index to narrow candidate cues
  * - normalized substring matching over a cue window
  * - after_ms to support "next match" queries
+ *
+ * Returns the tightest cue span that contains the match (not the whole window).
  */
 export function search(
     cues: Cue[],
@@ -53,13 +82,27 @@ export function search(
 
     const candidates = index.get(anchor) ?? [];
     for (const cueIdx of candidates) {
-        const span = windowSpan(cues, cueIdx);
-        if (span.end_ms <= after_ms) continue;
+        // Define search window (still useful for cross-cue phrases)
+        const a = Math.max(0, cueIdx - CONFIG.NEIGHBORS);
+        const b = Math.min(cues.length - 1, cueIdx + CONFIG.NEIGHBORS);
 
-        const text = windowText(cues, cueIdx);
-        if (text.includes(qNorm)) {
-            return withPadding(span);
-        }
+        // Quick reject based on time
+        if (cues[b].end_ms <= after_ms) continue;
+
+        const { text, map } = buildJoinedTextWithMap(cues, a, b);
+
+        const pos = text.indexOf(qNorm);
+        if (pos === -1) continue;
+
+        const range = matchToCueRange(map, pos, qNorm.length);
+        if (!range) continue;
+
+        const start_ms = cues[range.first].start_ms;
+        const end_ms = cues[range.last].end_ms;
+
+        if (end_ms <= after_ms) continue;
+
+        return withPadding(start_ms, end_ms);
     }
 
     return null;

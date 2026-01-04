@@ -12,6 +12,10 @@ const form = /** @type {HTMLFormElement} */ (mustGet("form"));
 const input = /** @type {HTMLInputElement} */ (mustGet("query"));
 const status = mustGet("status");
 
+let lastQuery;
+let lastEndMs;
+
+
 const CONFIG = {
     HLS_URL: "/public/hls/index.m3u8",
     API_BASE: "/api/search"
@@ -93,17 +97,37 @@ function bindSearch() {
     form.addEventListener("submit", async (e) => {
         e.preventDefault();
         e.stopPropagation();
+
         const term = input.value.trim();
         if (!term) return;
 
-        input.blur();
+        // 🔑 solo resetear si cambió la query
+        if (term !== lastQuery) {
+            lastQuery = term;
+            lastEndMs = 0;
+        }
 
         try {
-            await doSearch(term);
+            const res = await fetch(
+                `/api/search?q=${encodeURIComponent(term)}&after_ms=${lastEndMs + 1}`
+            );
+
+            if (!res.ok) throw new Error("not found");
+
+            const { start_ms, end_ms } = await res.json();
+
+            lastEndMs = end_ms;
+
+            video.currentTime = start_ms / 1000;
+            clipEndSec = end_ms / 1000;
+            await video.play().catch(() => { });
         } catch {
             showToast("No encontrado");
         }
+
+        return false;
     });
+
 
     input.addEventListener("keydown", (e) => {
         if (e.key === "Enter") {
