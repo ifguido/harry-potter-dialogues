@@ -53,6 +53,8 @@ function setStatus(text) {
 
 function setBusy(b) {
     state.busy = b;
+    // Keep the input enabled so it doesn't lose focus while searching.
+    // We only disable buttons to prevent double-submits.
     form.querySelectorAll("button").forEach((x) => (x.disabled = b));
 }
 
@@ -70,6 +72,9 @@ async function ensureMetadata() {
 }
 
 async function seekTo(sec) {
+    // Seeking is async in many browsers (especially with HLS).
+    // If we call play() immediately after setting currentTime, the seek may not
+    // have been applied yet, leading to "black" playback or immediate clipend.
     await ensureMetadata();
     if (!Number.isFinite(sec)) return;
 
@@ -104,7 +109,9 @@ async function seekTo(sec) {
 async function playSpan(startMs, endMs) {
     await ensureMetadata();
     hideClipOverlay();
-    // Clear any previous stop before seeking (important when jumping backwards)
+    // IMPORTANT: clear any previous stop before seeking.
+    // If the previous stopAt is earlier than the new clip end (or we jump
+    // backwards), the old timeupdate rule could immediately fire "clipend".
     setStopAt(video, null);
     video.pause();
 
@@ -116,6 +123,8 @@ async function playSpan(startMs, endMs) {
         () => false
     );
     if (!played) {
+        // Autoplay policies can reject play(), even if the backend/search works.
+        // In that case we surface a clear CTA instead of failing silently.
         setStatus("Tap to enable playback");
         return;
     }
@@ -182,6 +191,8 @@ function bindSearch() {
 
         if (state.busy) return;
 
+        // Do NOT blur the input: keeping focus lets the user hit Enter repeatedly
+        // to jump through multiple matches.
         await doSearch(input.value, true);
         return false;
     });
@@ -225,6 +236,8 @@ function bootstrap() {
         forceSubtitlesOn(video);
     });
     video.addEventListener("clipend", () => {
+        // Non-blocking overlay: we show a small card on top of the video
+        // to indicate the clip ended, but keep the search UI usable.
         showClipOverlay();
         setStatus("");
         // Let the UI settle, then focus the input

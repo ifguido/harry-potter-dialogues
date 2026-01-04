@@ -42,6 +42,11 @@ export function forceSubtitlesOn(video) {
 
 
 
+// We keep stopAt state at module level.
+// Reason: setStopAt() can be called many times (every search).
+// If we create a new function each time and try to remove it, we end up not
+// removing the previous listener (different function identity) and stack
+// many timeupdate listeners -> buggy playback.
 let stopAtSec = null;
 let stopAtVideo = null;
 let stopAtHandler = null;
@@ -54,6 +59,8 @@ let stopAtHandler = null;
 export function setStopAt(video, endSec) {
     stopAtSec = Number.isFinite(endSec) ? endSec : null;
 
+    // Attach exactly one timeupdate handler per video element.
+    // We only re-bind if the video element instance changes.
     if (stopAtVideo !== video) {
         if (stopAtVideo && stopAtHandler) {
             stopAtVideo.removeEventListener("timeupdate", stopAtHandler);
@@ -65,6 +72,7 @@ export function setStopAt(video, endSec) {
             if (!stopAtVideo) return;
 
             if (stopAtVideo.currentTime >= stopAtSec) {
+                // Hard stop (prevents the "stuck" loop)
                 stopAtVideo.pause();
                 stopAtVideo.currentTime = stopAtSec;
                 stopAtSec = null;
