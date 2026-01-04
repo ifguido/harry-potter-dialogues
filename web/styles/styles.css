@@ -171,6 +171,11 @@ video {
 
 /* Small screens: keep it clean */
 @media (max-width: 420px) {
+  .subs {
+    bottom: max(96px, calc(env(safe-area-inset-bottom) + 24px));
+    font-size: 16px;
+  }
+
   .search {
     width: calc(100vw - 16px);
     gap: 8px;
