@@ -41,26 +41,39 @@ export function forceSubtitlesOn(video) {
 }
 
 
-let clipEndSec = null;
-let boundVideo = null;
+
+let stopAtSec = null;
+let stopAtVideo = null;
+let stopAtHandler = null;
 
 /**
- * Sets an end time (in seconds) where playback should stop.
- * It attaches a single timeupdate listener per video element.
+ * Sets a hard stop time for the current clip.
+ * When reached, the video pauses, clamps to the end, clears the stop,
+ * and dispatches a "clipend" event.
  */
 export function setStopAt(video, endSec) {
-    clipEndSec = endSec;
+    stopAtSec = Number.isFinite(endSec) ? endSec : null;
 
-    if (boundVideo === video) return;
-    boundVideo = video;
-
-    video.addEventListener("timeupdate", () => {
-        if (clipEndSec == null) return;
-        if (video.currentTime >= clipEndSec) {
-            video.currentTime = clipEndSec;
-            video.pause();
+    if (stopAtVideo !== video) {
+        if (stopAtVideo && stopAtHandler) {
+            stopAtVideo.removeEventListener("timeupdate", stopAtHandler);
         }
-    });
+
+        stopAtVideo = video;
+        stopAtHandler = () => {
+            if (stopAtSec == null) return;
+            if (!stopAtVideo) return;
+
+            if (stopAtVideo.currentTime >= stopAtSec) {
+                stopAtVideo.pause();
+                stopAtVideo.currentTime = stopAtSec;
+                stopAtSec = null;
+                stopAtVideo.dispatchEvent(new CustomEvent("clipend"));
+            }
+        };
+
+        stopAtVideo.addEventListener("timeupdate", stopAtHandler);
+    }
 }
 
 /**

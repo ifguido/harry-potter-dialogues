@@ -14,15 +14,25 @@
   </head>
 
   <body>
-    <video id="video" autoplay muted playsinline>
-      <track
-        label="Subtitles"
-        kind="subtitles"
-        srclang="en"
-        src="/public/movie.vtt"
-        default
-      />
-    </video>
+    <div class="stage" id="stage">
+      <video id="video" autoplay muted playsinline>
+        <track
+          label="Subtitles"
+          kind="subtitles"
+          srclang="en"
+          src="/public/movie.vtt"
+          default
+        />
+      </video>
+
+      <div class="clip-overlay" id="clip-overlay" aria-live="polite">
+        <div class="clip-overlay__card" role="status">
+          <div class="clip-overlay__title">Clip ended</div>
+          <div class="clip-overlay__text">Search another word or phrase.</div>
+          <button type="button" id="clip-overlay-btn">Search</button>
+        </div>
+      </div>
+    </div>
 
     <div class="toast" id="toast"></div>
     <div class="hud" id="hud">
@@ -34,7 +44,7 @@
       >
         <input
           id="query"
-          placeholder="Buscar diálogo..."
+          placeholder="Buscar palabra o frase de Harry Potter 1"
           inputmode="search"
           enterkeyhint="search"
         />

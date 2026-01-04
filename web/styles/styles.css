@@ -21,12 +21,20 @@ body {
 }
 
 video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: black;
+}
+
+.stage {
   position: fixed;
   inset: 0;
   width: 100vw;
   height: 100vh;
-  object-fit: cover;
-  background: black;
+  overflow: hidden;
 }
 
 /* Simple floating search bar */
@@ -44,6 +52,36 @@ video {
   backdrop-filter: blur(10px);
 }
 
+.hud {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.hud .search,
+.hud .status {
+  pointer-events: auto;
+}
+
+.status {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  top: calc(max(12px, env(safe-area-inset-top)) + 72px);
+  width: min(900px, calc(100vw - 16px));
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 13px;
+  text-align: center;
+  padding: 8px 10px;
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.status:empty {
+  display: none;
+}
+
 /* Input: mobile-friendly sizes */
 .search input {
   flex: 1;
@@ -55,6 +93,11 @@ video {
   line-height: 20px;
   padding: 10px 10px;
   min-width: 0;
+  text-align: left;
+}
+
+.search input:placeholder-shown {
+  text-align: center;
 }
 
 /* Button: bigger tap target */
@@ -99,15 +142,16 @@ video {
 
 .legal {
   position: fixed;
-  bottom: 12px;
   right: 12px;
-  z-index: 20;
+  bottom: max(12px, env(safe-area-inset-bottom));
+  z-index: 9999;
+  pointer-events: auto;
 }
 
 .legal button {
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.65);
   color: #fff;
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.15);
   padding: 8px 12px;
   border-radius: 12px;
   font-size: 12px;
@@ -117,11 +161,12 @@ video {
 .legal-modal {
   position: fixed;
   inset: 0;
+  z-index: 10000;
   background: rgba(0, 0, 0, 0.7);
   display: none;
   align-items: center;
   justify-content: center;
-  z-index: 30;
+  padding: 16px;
 }
 
 .legal-modal.open {
@@ -129,28 +174,84 @@ video {
 }
 
 .legal-content {
-  max-width: 520px;
+  width: min(560px, 100%);
   max-height: 80vh;
-  overflow-y: auto;
+  overflow: auto;
   background: #111;
   color: #fff;
-  padding: 20px;
   border-radius: 18px;
-  font-size: 14px;
-  line-height: 1.4;
+  padding: 18px;
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .legal-content h2 {
-  margin-top: 0;
+  margin: 0 0 10px 0;
+  font-size: 16px;
+}
+
+.legal-content p {
+  margin: 0 0 10px 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .legal-content .close {
   position: absolute;
-  top: 16px;
-  right: 18px;
-  background: none;
-  border: none;
+  top: 10px;
+  right: 12px;
+  background: transparent;
+  border: 0;
   color: #fff;
-  font-size: 24px;
+  font-size: 22px;
   cursor: pointer;
+}
+
+.clip-overlay {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 20px;
+  z-index: 1;
+  background: transparent;
+  pointer-events: none;
+}
+
+.clip-overlay.open {
+  display: flex;
+}
+
+.clip-overlay__card {
+  width: min(520px, calc(100vw - 24px));
+  background: rgba(0, 0, 0, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 18px;
+  padding: 16px;
+  color: #fff;
+  text-align: center;
+  pointer-events: auto;
+}
+
+.clip-overlay__title {
+  font-weight: 800;
+  font-size: 16px;
+}
+
+.clip-overlay__text {
+  margin-top: 6px;
+  font-size: 13px;
+  opacity: 0.9;
+}
+
+.clip-overlay__card button {
+  margin-top: 12px;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  min-height: 42px;
 }

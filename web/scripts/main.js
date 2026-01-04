@@ -18,6 +18,20 @@ const form = /** @type {HTMLFormElement} */ (mustGet("form"));
 const input = /** @type {HTMLInputElement} */ (mustGet("query"));
 const status = mustGet("status");
 
+const clipOverlay = document.getElementById("clip-overlay");
+const clipOverlayBtn = document.getElementById("clip-overlay-btn");
+
+function showClipOverlay() {
+    if (!clipOverlay) return;
+    clipOverlay.classList.add("open");
+}
+
+function hideClipOverlay() {
+    if (!clipOverlay) return;
+    clipOverlay.classList.remove("open");
+}
+
+
 // 🔥 Single source of truth
 const state = {
     lastQuery: "",
@@ -39,7 +53,7 @@ function setStatus(text) {
 
 function setBusy(b) {
     state.busy = b;
-    form.querySelectorAll("button, input").forEach((x) => (x.disabled = b));
+    form.querySelectorAll("button").forEach((x) => (x.disabled = b));
 }
 
 function normalizeTerm(s) {
@@ -57,8 +71,12 @@ async function ensureMetadata() {
 
 async function playSpan(startMs, endMs) {
     await ensureMetadata();
-    setStopAt(video, endMs / 1000);
+    hideClipOverlay();
+    // Clear any previous stop before seeking (important when jumping backwards)
+    setStopAt(video, null);
+    video.pause();
     video.currentTime = startMs / 1000;
+    setStopAt(video, endMs / 1000);
     await video.play().catch(() => { });
     forceSubtitlesOn(video);
 }
@@ -122,7 +140,6 @@ function bindSearch() {
 
         if (state.busy) return;
 
-        input.blur();
         await doSearch(input.value, true);
         return false;
     });
@@ -165,6 +182,26 @@ function bootstrap() {
     video.addEventListener("loadedmetadata", () => {
         forceSubtitlesOn(video);
     });
+    video.addEventListener("clipend", () => {
+        showClipOverlay();
+        setStatus("");
+        // Let the UI settle, then focus the input
+        setTimeout(() => input.focus(), 50);
+    });
+
+    clipOverlayBtn?.addEventListener("click", () => {
+        hideClipOverlay();
+        input.focus();
+    });
+
+    // Tap outside closes too
+    clipOverlay?.addEventListener("click", (e) => {
+        if (e.target === clipOverlay) {
+            hideClipOverlay();
+            input.focus();
+        }
+    });
+
 }
 
 bootstrap();
