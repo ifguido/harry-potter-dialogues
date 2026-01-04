@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <title>Harry Potter Dialogues</title>
+  </head>
+  <body>
+    <video id="video" autoplay muted playsinline>
+      <track
+        label="Subtitles"
+        kind="subtitles"
+        srclang="en"
+        src="/movie.vtt"
+        default
+      />
+    </video>
+
+    <div class="toast" id="toast"></div>
+
+    <div class="offset">
+      <span>offset_ms</span>
+      <input id="offset" type="number" step="50" value="0" />
+    </div>
+
+    <form class="search" id="form" autocomplete="off">
+      <input id="query" placeholder="Buscar diálogo..." inputmode="search" />
+      <button type="submit">Buscar</button>
+    </form>
+
+    <!-- HLS.js solo como fallback (Safari usa nativo) -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
