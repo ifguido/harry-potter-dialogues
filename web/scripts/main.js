@@ -6,6 +6,7 @@ import {
     setStopAt
 } from "./player.js";
 import { searchNext } from "./api.js";
+import { applyI18n, getLanguage, setLanguage, t } from "./i18n.js";
 
 function mustGet(id) {
     const el = document.getElementById(id);
@@ -18,6 +19,9 @@ const form = /** @type {HTMLFormElement} */ (mustGet("form"));
 const input = /** @type {HTMLInputElement} */ (mustGet("query"));
 const status = mustGet("status");
 const subs = document.getElementById("subs");
+const langSelect = /** @type {HTMLSelectElement | null} */ (
+    document.getElementById("lang")
+);
 
 const clipOverlay = document.getElementById("clip-overlay");
 const clipOverlayBtn = document.getElementById("clip-overlay-btn");
@@ -205,7 +209,7 @@ async function playSpan(startMs, endMs) {
     if (!played) {
         // Autoplay policies can reject play(), even if the backend/search works.
         // In that case we surface a clear CTA instead of failing silently.
-        setStatus("Tap to enable playback");
+        setStatus(t("status.tapToPlay"));
         return;
     }
 
@@ -224,7 +228,7 @@ async function doSearch(term, isNext) {
     }
 
     setBusy(true);
-    setStatus("Searching…");
+    setStatus(t("status.searching"));
 
     try {
         const afterMs = state.lastEndMs + 1;
@@ -239,7 +243,7 @@ async function doSearch(term, isNext) {
         await playSpan(start_ms, end_ms);
         setStatus("");
     } catch {
-        setStatus("Not found");
+        setStatus(t("status.notFound"));
     } finally {
         setBusy(false);
     }
@@ -305,6 +309,18 @@ function bindLegalDisclaimer() {
 /* ================= BOOT ================= */
 
 function bootstrap() {
+    // i18n boot:
+    // UI language can be EN/ES/PT, but search ALWAYS targets English dialogues.
+    // We translate only interface strings, never the query.
+    applyI18n(document, getLanguage());
+    if (langSelect) {
+        langSelect.value = getLanguage();
+        langSelect.addEventListener("change", () => {
+            const next = setLanguage(langSelect.value);
+            langSelect.value = next;
+        });
+    }
+
     initPlayer(video, CONFIG.HLS_URL);
     lockDownVideoUI(video);
 

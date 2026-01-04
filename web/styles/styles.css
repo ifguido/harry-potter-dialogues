@@ -137,6 +137,24 @@ video {
   white-space: nowrap;
 }
 
+.lang {
+  display: flex;
+  align-items: center;
+}
+
+.lang select {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(0, 0, 0, 0.35);
+  color: rgba(255, 255, 255, 0.95);
+  padding: 10px 12px;
+  border-radius: 14px;
+  font-weight: 800;
+  min-height: 40px;
+  cursor: pointer;
+}
+
 /* Toast: keep visible above home indicator */
 .toast {
   position: fixed;
@@ -162,6 +180,11 @@ video {
 
   .search button {
     padding: 10px 12px;
+    border-radius: 12px;
+  }
+
+  .lang select {
+    padding: 10px 10px;
     border-radius: 12px;
   }
 }

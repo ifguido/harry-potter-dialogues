@@ -17,6 +17,7 @@
     <div class="stage" id="stage">
       <video id="video" autoplay muted playsinline>
         <track
+          data-i18n-attr="label:track.subtitles"
           label="Subtitles"
           kind="subtitles"
           srclang="en"
@@ -30,9 +31,19 @@
 
       <div class="clip-overlay" id="clip-overlay" aria-live="polite">
         <div class="clip-overlay__card" role="status">
-          <div class="clip-overlay__title">Clip ended</div>
-          <div class="clip-overlay__text">Search another word or phrase.</div>
-          <button type="button" id="clip-overlay-btn">Search</button>
+          <div class="clip-overlay__title" data-i18n="clipEnded.title">
+            Clip ended
+          </div>
+          <div class="clip-overlay__text" data-i18n="clipEnded.text">
+            Search another word or phrase.
+          </div>
+          <button
+            type="button"
+            id="clip-overlay-btn"
+            data-i18n="clipEnded.button"
+          >
+            Search
+          </button>
         </div>
       </div>
     </div>
@@ -47,11 +58,24 @@
       >
         <input
           id="query"
-          placeholder="Buscar palabra o frase de Harry Potter 1"
+          data-i18n-placeholder="search.placeholder"
+          placeholder="Search an English word or phrase — Harry Potter 1"
           inputmode="search"
           enterkeyhint="search"
         />
-        <button type="submit">Buscar</button>
+        <label
+          class="lang"
+          for="lang"
+          data-i18n-attr="aria-label:lang.label"
+          aria-label="Language"
+        >
+          <select id="lang">
+            <option value="en">EN</option>
+            <option value="es">ES</option>
+            <option value="pt">PT</option>
+          </select>
+        </label>
+        <button type="submit" data-i18n="search.button">Search</button>
       </form>
       <div class="status" id="status" aria-live="polite"></div>
     </div>
@@ -63,33 +87,35 @@
     <script type="module" src="./scripts/main.js"></script>
 
     <footer class="legal">
-      <button id="open-legal">Educational disclaimer</button>
+      <button id="open-legal" data-i18n="legal.open">
+        Educational disclaimer
+      </button>
     </footer>
 
     <div class="legal-modal" id="legal-modal">
       <div class="legal-content">
         <button class="close" id="close-legal">×</button>
-        <h2>Educational Disclaimer</h2>
-        <p>
+        <h2 data-i18n="legal.title">Educational Disclaimer</h2>
+        <p data-i18n="legal.p1">
           This project is an independent, non-commercial educational experiment.
         </p>
-        <p>
+        <p data-i18n-html="legal.p2">
           I do not own the rights to <em>Harry Potter</em>, its movies,
           characters, or related intellectual property. All rights belong to
           <strong>Warner Bros. Entertainment</strong> and
           <strong>J.K. Rowling</strong>.
         </p>
-        <p>
+        <p data-i18n="legal.p3">
           This website is intended solely to demonstrate a technical concept:
           real-time subtitle indexing and video seeking.
         </p>
-        <p>
+        <p data-i18n-html="legal.p4">
           No movie files are distributed with this project. The public
           repository does <strong>not</strong> include any copyrighted video or
           subtitle files. Any media used must be provided by the user from a
           legally obtained source.
         </p>
-        <p>
+        <p data-i18n="legal.p5">
           If this project causes any concern, I sincerely apologize and will
           address it immediately.
         </p>
