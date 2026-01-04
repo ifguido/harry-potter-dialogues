@@ -195,6 +195,9 @@ video {
   bottom: max(12px, env(safe-area-inset-bottom));
   z-index: 9999;
   pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .legal button {
@@ -205,6 +208,24 @@ video {
   border-radius: 12px;
   font-size: 12px;
   cursor: pointer;
+}
+
+.legal__github {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  text-decoration: none;
+}
+
+.legal__github:hover,
+.legal__github:focus-visible {
+  border-color: rgba(255, 255, 255, 0.28);
 }
 
 .legal-modal {
